@@ -1,0 +1,63 @@
+---
+title: "2021_03_03_MarkDownGroup"
+author: "Anthony Gutierrez"
+date: "3/3/2021"
+output:  
+  rmdformats::readthedown
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,
+                      message=FALSE,
+                      warning=FALSE,
+                      fig.path="../outputs/")
+```
+
+
+# Introdction 
+Today we are working as a group to make some beautiful grapghs and figures on MarkDown
+
+
+## Load Libraries 
+```{r}
+library(palmerpenguins)
+library(tidyverse)
+library(here)
+library(kableExtra)
+library(ggbernie)
+library(rmdformats)
+
+view(penguins)
+```
+
+
+## Lab Assignment
+- Take any of the data sheets you have already worked with in class and create at least one table and one figure in an Rmarkdown file.  
+- Create the most beautiful RMarkdown output you can during lab hours in either an html, github doc, or pdf format.    
+- Make sure you have headings with clear explanations of what you are doing.  
+- Practice using markdown formatting with bold, italics, and lists.    
+- Make sure your outputs and scripts are saved in the appropriate folders. Keep proper coding etiquette (figures need to be pub quality as usual).  
+
+
+### Create table 
+```{r}
+penguins %>%
+  group_by(species, island, year) %>%
+  summarise(mean_mass = mean(body_mass_g, na.rm=TRUE),
+  mean_flipper = mean(flipper_length_mm, na.rm=TRUE))%>%
+  kbl() %>%
+  kable_classic() %>%
+  row_spec(0, bold=T)
+  
+```
+
+### plot 
+```{r, Penfig, fig.width=7, fig.height=5, fig.align='center', fig.cap= "penguin body mass"}
+PenguinFigures<- penguins %>%
+  ggplot(aes(x = flipper_length_mm,
+             y= body_mass_g,
+             group = species,
+             color = island))+
+  geom_boxplot()
+PenguinFigures
+```
+
