@@ -1,0 +1,79 @@
+---
+title: "2021_03_08_Group_worldmap"
+author: "Anthony Gutierrez"
+date: "3/8/2021"
+output: 
+ html_document:
+    toc: TRUE
+    toc_float: TRUE
+
+---
+
+#Load Libraries
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(here)
+library(maps)
+library(mapdata)
+library(mapproj)
+library(raster)
+
+sf_trees <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-01-28/sf_trees.csv')
+```
+
+
+# Data
+```{r}
+view(sf_trees)
+view(map_data("county"))
+
+states<- map_data("state")
+county<- map_data("county")
+
+```
+
+### Important Note: 
+Copy and pasted from Rachman after I could not get mine working. 
+
+#Filter corcus from the tree data
+```{r}
+CA_data<- states%>%
+  filter(region== "california")
+sanfran<- county%>%
+  filter(subregion %in% c("san francisco"))
+
+
+tree<- sf_trees%>% 
+  dplyr::filter(species=="Quercus agrifolia :: Coast Live Oak"
+)%>%
+  dplyr::select(longitude, latitude,tree_id)%>%
+  drop_na(longitude, latitude)%>%
+dplyr::filter(!latitude >= 38) %>% 
+dplyr:: filter(!longitude <= -122.468)
+
+view(tree)
+??getmap
+
+```
+
+```{r}
+view(sf_trees)
+??getmap
+ggplot()+
+  geom_polygon(data=sanfran, aes(x=long, y= lat, group=group),
+               color= "black", fill=NA)+
+  geom_density_2d(data=tree, 
+             aes(x=longitude, 
+                 y=latitude))+
+  geom_point(data = tree, 
+             mapping = aes(x = longitude, y = latitude), 
+             show.legend = F,
+             size = 0.3,
+             color = 'green')+
+  theme_set(theme_bw())+
+  coord_map(projection= "albers", lat0= 37.79, lon1= -122.4)+
+  ggtitle('Density of Coast Live Oaks of San Francisco')+
+  ggsave(here("week_7","outputs","SF_oaks.pdf"))
+```
+

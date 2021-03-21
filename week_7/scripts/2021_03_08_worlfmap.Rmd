@@ -1,0 +1,114 @@
+---
+title: "worldmap"
+author: "Anthony Gutierrez"
+date: "3/21/2021"
+output: html_document
+---
+
+# Load Libraries 
+```{r setup, include=FALSE}
+library(tidyverse)
+library(here)
+library(maps)
+library(mapdata)
+library(mapproj)
+knitr::opts_chunk$set(echo = TRUE,
+                      warning=FALSE,
+                      message=FALSE)
+```
+
+# Read in data on population in Cali by county
+```{r}
+popdata<- read_csv(here("week_7", "data", "CAPopdata.csv"))
+```
+
+```{r}
+stars<- read_csv(here("Week_7","data","stars.csv"))
+
+world<- map_data("world") #get geographical image of the selected area. 
+head("world")
+
+usa<- map_data("usa")
+head(usa)
+
+italy<- map_data("italy")
+head(italy)
+
+states<- map_data("state")
+head(states)
+
+counties<- map_data("county")
+counties
+
+```
+
+## Nomenclature
+long= longitude
+lat= latitude
+order= in what order ggplot should connect dts
+region or subregions
+group= controls whether adjacent points should be cnnected by lines 
+
+```{r}
+ggplot()+
+  geom_polygon(data = world, 
+               aes(x = long, #coordinates 
+                   y = lat, 
+                   group = group,
+                   fill = region), # fill in area 
+               color = "black")+ # olor of the outline
+  theme_minimal()+
+  guides(fill = FALSE)+
+  theme(panel.background = element_rect(fill = "lightblue"))+
+  coord_map(projection = "mercator", # note: many different types of projection
+            xlim = c(-180,180))
+```
+
+
+# Filter out just Cali
+```{r}
+CA_data <- states %>%
+  filter(region == "california")
+
+# Use the states dataset
+ggplot()+
+geom_polygon(data = CA_data, 
+             aes(x = long, 
+                 y = lat, 
+                 group = group), 
+             color = "black")+ #black outline 
+  coord_map()+
+  theme_void()# black fill in 
+```
+# Adding multiple layers of data
+
+First we need to get the country level data and join it with our dataset on population 
+
+```{r}
+CApop_county<-popdata %>%
+  select("subregion" = County, Population)  %>% # rename the county col
+  inner_join(counties) %>%
+  filter(region == "california") # some counties have same names in other states
+
+view(CApop_county)
+
+head(CApop_county)
+
+ggplot()+
+geom_polygon(data = CApop_county, 
+             aes(x = long, 
+                 y = lat, 
+                 group = group,
+                 fill = Population),  
+             color = "black")+
+  geom_point(data = stars, # add a point at all my sites 
+             aes(x = long, 
+                 y = lat,
+                 size = star_no))+ 
+  coord_map()+
+  theme_void() +
+  scale_fill_gradient(trans = "log10")+
+  labs(size = "# stars/m2") + #adding legend for the star size
+  ggsave(here("week_7","outputs","CApop.pdf"))
+```
+
