@@ -1,0 +1,66 @@
+---
+title: "Bad graph"
+author: "Anthony Gutierrez"
+date: "3/21/2021"
+output: html_document
+---
+
+# Introduction
+The goal in this part is to make the worst possible figure
+
+```{r}
+knitr::opts_chunk$set(echo = TRUE,
+                      fig.path="../outputs/")
+```
+
+# Load Libraries 
+```{r setup, include=FALSE}
+library(tidyverse)
+library(palmerpenguins)
+library(here)
+library(rmdformats)
+library(kableExtra)
+library(ggbernie)
+knitr::opts_chunk$set(echo = TRUE)
+
+view(penguins)
+```
+
+```{r}
+penguins_name<- penguins %>%
+  rename("birdtype" = species)
+
+penguins_name
+```
+
+```{r, Penfig, fig.width=7, fig.height=5, fig.align='center', fig.cap= "the bird noses"}
+PenguinFigures2<- penguins_name %>%
+  ggplot(aes(x = bill_length_mm, y = bill_depth_mm, color = birdtype))+
+  geom_bernie(aes(x = bill_length_mm, y = bill_depth_mm), bernie = "sitting")+
+  geom_boxplot() + #linear model
+  labs(x = "length ",
+       y = "depth",
+       title = "noses")+
+  geom_jitter(color="black", size=0.4, alpha=0.9) +
+  scale_color_grey()+
+  theme_bw()+
+  theme(strip.text = element_text(face="bold", size=1000), 
+        plot.title = element_text(face = "bold"))
+
+```
+
+## Change font size
+```{r}
+one<- PenguinFigures2 + theme(axis.text = element_text(size = 30))
+
+Final<- one + theme(axis.title = element_text(size = 5))
+Final
+```
+
+# Explanation why the graph is not presentable or acceptable
+Unclear title does not define what is being presented well. It is unclear that we are comparing bill length and depth of penguin species.  
+Axis titles are too small, axis numbers are too large.  
+Box plot is not an appropriate statistical analysis for this particular datset.   
+Data points were replaced by Bernie's, which makes the figure look very cluttered and is distracting.   
+Species are not color coated, so there is no way to differentiate between points.  
+Legend is unclear. It is not clear that Birdtype is species of penguin. Legend colors are very similar. 

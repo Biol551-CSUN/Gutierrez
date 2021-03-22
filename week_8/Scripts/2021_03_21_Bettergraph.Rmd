@@ -1,0 +1,56 @@
+---
+title: "Better graph"
+author: "Anthony Gutierrez"
+date: "3/21/2021"
+output:
+  html_document:
+    df_print: paged
+---
+
+# Introduction
+The goal in this part is to make the best possible figure
+
+```{r}
+knitr::opts_chunk$set(echo = TRUE,
+                      fig.path="../outputs/")
+```
+
+# Load Libraries 
+```{r setup, include=FALSE}
+library(tidyverse)
+library(palmerpenguins)
+library(here)
+library(rmdformats)
+library(kableExtra)
+knitr::opts_chunk$set(echo = TRUE)
+
+view(penguins)
+```
+
+
+```{r, Penfig, fig.width=7, fig.height=5, fig.align='center', fig.cap= "Penguin bill measurements"}
+PenguinFigures<- penguins %>%
+  group_by(species)%>%
+  ggplot(aes(x = bill_length_mm, y = bill_depth_mm, color = species))+
+  geom_point()+
+  scale_color_viridis_d() +
+  geom_smooth(method = "lm")+ #linear model
+  labs(x = "Bill Length (mm)",
+       y = "Bill Depth (mm)",
+       title = "Penguin bill measurements by species")+
+  theme(strip.background = element_rect(fill = "white", color = "white"),
+        strip.text = element_text(face="bold", size=15), 
+        plot.title = element_text(face = "bold"))
+  
+
+PenguinFigures
+
+```
+
+# Explanation why the graph is presentable and acceptable
+Title clearly exaplins the content and is a good font size  
+Axis lablels include units and have a good font size   
+Clear that this figure groups by species. Species is color coated  
+Well defined legend  
+Used color blind - friendly colors
+
