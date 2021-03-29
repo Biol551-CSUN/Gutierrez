@@ -1,0 +1,136 @@
+---
+title: "Patchwork"
+author: "Anthony Gutierrez"
+date: "3/28/2021"
+output:
+  html_document:
+    df_print: paged
+---
+
+# Introduction
+We will be learning how to use a few new R packages.  
+{patchwork} - bringing plots together  
+{ggrepel} - repel your labels on your plots  
+{gganimate} - add some animations to your plots  
+{magick} - photo processing  
+
+#Load Libraries 
+```{r setup, include=FALSE}
+library(tidyverse)
+library(here)
+library(patchwork)
+library(ggrepel)
+library(gganimate)
+library(magick)
+library(palmerpenguins)
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#Plotting 
+##Plotting with Patchwork
+```{r}
+# plot 1
+p1<-penguins %>%
+  ggplot(aes(x = body_mass_g, 
+             y = bill_length_mm, 
+             color = species))+
+  geom_point()
+
+p1
+
+# plot 2
+p2<-penguins %>%
+  ggplot(aes(x = sex, 
+             y = body_mass_g, 
+             color = species))+
+  geom_jitter(width = 0.2)
+
+p2
+```
+
+Put one plot on top of the other.
+```{r}
+#Patchwork in action
+
+p1+p2 + #Bring the plots together using simple operations.
+  plot_layout(guides = 'collect')+ #Group the legends.
+  plot_annotation(tag_levels = 'A') #Add labels (A,B).
+```
+
+## Plotting with ggrepel 
+```{r}
+View(mtcars)
+
+#ggplot(mtcars, aes(x = wt, 
+#                   y = mpg, 
+#                   label = rownames(mtcars))) +
+#  geom_text() + # creates a text label
+#  geom_point(color = 'red')
+
+#Repel the labels 
+#ggplot(mtcars, aes(x = wt, 
+#                   y = mpg, 
+#                   label = rownames(mtcars))) +
+#  geom_text_repel() + # repel them
+#  geom_point(color = 'red')
+
+#Label the text
+ggplot(mtcars, aes(x = wt, 
+                   y = mpg, 
+                   label = rownames(mtcars))) +
+  geom_label_repel() + # repel them
+  geom_point(color = 'red')
+```
+
+## Plotting with gganimate 
+```{r}
+
+#Add transition to normal plot
+penguins %>%
+ggplot(aes(x = body_mass_g, 
+            y = bill_depth_mm, 
+            color = species)) +
+  geom_point() +
+  transition_states(
+     year, # what are we animating by
+     transition_length = 2, #The relative length of the transition.
+     state_length = 1 # The length of the pause between transitions
+   )+
+  ease_aes("bounce-in-out")+ #Change the ease aesthetics 
+  ggtitle('Year: {closest_state}')+ #Add transition title
+  anim_save(here("week_9","outputs","mypengiungif.gif"))
+```
+
+## Plotting with magick
+magick is used for advanced image processing 
+```{r}
+#Read in an image of a pengiun (can be on your computer or the internet).
+penguin<-image_read("https://pngimg.com/uploads/penguin/pinguin_PNG9.png")
+
+penguin
+
+#To put it on a plot you first need to save your plot as an image.
+penguins %>%
+ggplot(aes(x = body_mass_g, 
+            y = bill_depth_mm, 
+            color = species)) +
+  geom_point() +
+  ggsave(here("week_9","outputs","penguinplot.png"))
+```
+
+Read in the plot as a magick image and make a composite plot
+```{r}
+penplot<-image_read(here("week_9","outputs","penguinplot.png"))
+out <- image_composite(penplot, penguin, offset = "+70+30")
+
+out
+
+#You can do this with gifs too!!!
+# Read in a penguin gif
+pengif<-image_read("https://media3.giphy.com/media/H4uE6w9G1uK4M/giphy.gif")
+outgif <- image_composite(penplot, pengif, gravity = "center")
+animation <- image_animate(outgif, fps = 10, optimize = TRUE)
+
+animation
+```
+
