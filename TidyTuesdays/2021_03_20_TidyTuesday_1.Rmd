@@ -1,0 +1,56 @@
+---
+title: "TidyTuesday_1"
+author: "Anthony Gutierrez"
+date: "3/28/2021"
+output:  
+  rmdformats::readthedown
+---
+
+# Introduction 
+The goal of this first Tidy Tuesday is to create a chart for distribution of the 
+average numbers of persons per race from the years 1790 - 1830 and from 1831 - 1870. 
+If I am unable to do this, I will create a chart of all years.
+
+# Load Libraries 
+```{r setup, include=FALSE}
+library(tidyverse)
+library(here)
+library(tidytuesdayR) # loading in the TT data
+library(RColorBrewer) #maybe I will use
+library(plotrix) # maybe I will use
+
+tuesdata <- tt_load("2021-02-16")
+Census <- tuesdata$census
+View(Census)
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Plotting Black Slave populations 
+```{r}
+pop_by_race<- Census %>%
+  ggplot(aes(x = year, y = black_slaves, color = region))+
+  geom_point()+
+  labs(x = "Year",
+       y = "Black Slaves",
+       title = "Slave populations in the 1800s",
+       subtitle = "Populations of slave from regions of the U.S. between 1790 and 1870")+
+  scale_color_viridis_d()
+
+pop_by_race
+```
+
+## My attempt at making a linear plot
+```{r}
+pop_by_race2<- Census %>%
+  ggplot(aes(x = year, y = black_slaves, color = region))+
+  geom_point()+
+  labs(x = "Year",
+       y = "Black Slaves",
+       title = "Slave populations in the 1800s",
+       subtitle = "Populations of slave from regions of the U.S. between 1790 and 1870")+
+  scale_color_viridis_d()+
+  geom_line()
+
+pop_by_race2
+```
+
