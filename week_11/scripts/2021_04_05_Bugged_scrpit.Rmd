@@ -1,0 +1,15 @@
+---
+title: "Bugged code"
+author: "Anthony Gutierrez"
+date: "4/5/2021"
+output: html_document
+---
+# Introduction
+The goal of this assignment is to create a simple script with only one bug. We have to then upload a reproducible data script into Slack. We will fix their bugs and they will fix our bug. 
+
+# Load Libraries 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
