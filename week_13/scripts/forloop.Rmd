@@ -1,0 +1,236 @@
+---
+title: "Week13"
+author: "Anthony Gutierrez"
+date: "4/26/2021"
+output: html_document
+---
+
+# Libraries 
+
+```{r}
+library(tidyverse)
+library(here)
+```
+
+# Introduction 
+
+for loops are one way to run an iterative process (do something over and over again). However, with the tidyverse you can avoid needing loops for almost any basic coding needs. Where it does come in handy is in population modeling and Bayesian modeling, for example. Also, it is integral to programming and is happening "under the hood" whether you use them or not.
+
+For loops have two major parts: an indexing statement and a command (or set of commands) to repeat. The coding is in base R.
+
+The command looks like this:
+for(index in sequence){
+command to repeat}
+
+# Simple for loop
+
+```{r}
+print(paste("The year is", 2000)) # statement telling us what year it is along a sequence of years.
+
+
+years<-c(2015:2021)
+for (i in years){ # set up the for loop where i is the index
+  print(paste("The year is", i)) # loop over i
+}
+```
+
+
+```{r}
+#Let's say you want to save a new vector with all the years. To do this we need to pre-allocate space and tell R where it is going to be saved.
+
+#Pre-allocate space for the for loop
+# empty matrix
+year_data<-data.frame(matrix(ncol = 2, nrow = length(years)))
+# add column names
+colnames(year_data)<-c("year", "year_name")
+year_data
+
+
+# Add the for loop and fill in the empty columns 
+for (i in 1:length(years)){ # set up the for loop where i is the index
+  year_data$year_name[i]<-paste("The year is", years[i]) # loop over year name
+  year_data$year[i]<-years[i] # loop over year
+}
+
+year_data
+```
+
+
+# Using loops to read in multiple .csv files
+
+```{r}
+testdata<-read.csv(here("week_13", "data", "cond_data","011521_CT316_1pcal.csv"))
+
+glimpse(testdata)
+```
+
+##list files in a directory
+
+```{r}
+# point to the location on the computer of the folder
+CondPath<-here("Week_13", "data", "cond_data")
+
+# list all the files in that path with a specific pattern
+# In this case we are looking for everything that has a .csv in the filename
+# you can use regex to be more specific if you are looking for certain patterns in filenames
+
+files <- dir(path = CondPath,pattern = ".csv")
+
+files
+```
+
+## pre-allocate space for the loop
+
+```{r}
+# pre-allocate space
+# make an empty dataframe that has one row for each file and 3 columns
+
+cond_data<-data.frame(matrix(nrow = length(files), ncol = 3))
+# give the dataframe column names
+
+colnames(cond_data)<-c("filename","mean_temp", "mean_sal")
+
+cond_data
+```
+
+## for loop test 
+
+```{r}
+raw_data<-read.csv(paste0(CondPath,"/",files[1])) # test by reading in the first file and see if it works
+#"paste0" because we do not a space between all of these 
+head(raw_data)
+
+mean_temp<-mean(raw_data$Temperature, na.rm = TRUE) # calculate a mean
+
+mean_temp
+```
+
+## Turn into a for loop
+
+```{r}
+# Turn into a for loop
+for (i in 1:length(files)){ # loop over 1:3 the number of files
+} # Test
+
+
+# Add loop over raw data 
+for (i in 1:length(files)){ # loop over 1:3 the number of files 
+raw_data<-read.csv(paste0(CondPath,"/",files[i]))
+glimpse(raw_data)
+}
+
+
+# Add in the coulmns 
+for (i in 1:length(files)){ # loop over 1:3 the number of files 
+raw_data<-read.csv(paste0(CondPath,"/",files[i]))
+#glimpse(raw_data)
+cond_data$filename[i]<-files[i]
+} 
+
+cond_data
+
+
+# Add in the means
+for (i in 1:length(files)){ # loop over 1:3 the number of files 
+raw_data<-read.csv(paste0(CondPath,"/",files[i]))
+#glimpse(raw_data)
+cond_data$filename[i]<-files[i]
+cond_data$mean_temp[i]<-mean(raw_data$Temperature, na.rm =TRUE)
+cond_data$mean_sal[i]<-mean(raw_data$Salinity, na.rm =TRUE)
+} 
+
+cond_data
+```
+
+
+
+# purrr package 
+
+family of map() functions which allow you to replace many for loops with code that is both more succinct and easier to read. The best place to learn about the map() functions is the iteration chapter in R for data science.
+
+# Map functions
+
+The pattern of looping over a vector, doing something to each element and saving the results is so common that the purrr package provides a family of functions to do it for you. There is one function for each type of output:
+
+map() makes a list.
+map_lgl() makes a logical vector.
+map_int() makes an integer vector.
+map_dbl() makes a double vector.
+map_chr() makes a character vector.
+map_df() makes a dataframe
+
+Each function takes a vector as input, applies a function to each piece, and then returns a new vector that’s the same length (and has the same names) as the input.
+
+# Simple example
+There 3 ways to do the same thing in a map() function.
+
+```{r}
+#Create a vector from 1:10
+
+1:10 # a vector from 1 to 10 (we are going to do this 10 times)
+
+1:10 %>% # a vector from 1 to 10 (we are going to do this 10 times) %>% # the vector to iterate over
+  map(rnorm, n = 15)  %>% # calculate 15 random numbers based on a normal distribution in a list 
+  map_dbl(mean) # calculate the mean. It is now a vector which is type "double"
+```
+
+make your own function 
+```{r}
+1:10 %>% # list 1:10
+  map(function(x) rnorm(15, x)) %>% # make your own function
+  map_dbl(mean)
+```
+
+Use a formula when you want to change the arguments within the function
+```{r}
+1:10 %>%
+  map(~ rnorm(15, .x)) %>% # changes the arguments inside the function
+  map_dbl(mean)
+```
+
+# Bring in files using purrr instead of a for loop
+```{r}
+# point to the location on the computer of the folder
+CondPath<-here("Week_13", "data", "cond_data")
+files <- dir(path = CondPath,pattern = ".csv")
+
+files
+
+
+#Or, we can get the full file names in one less step by doing this...
+
+files <- dir(path = CondPath,pattern = ".csv", full.names = TRUE)
+#save the entire path name
+
+files
+```
+
+# Read in the files 
+```{r}
+data<-files %>%
+  set_names()%>% # set's the id of each list to the file name
+  map_df(read_csv,.id = "filename") %>% # map everything to a dataframe and put the id in a column called filename
+  group_by(filename) %>%
+  summarise(mean_temp = mean(Temperature, na.rm = TRUE),
+            mean_sal = mean(Salinity,na.rm = TRUE))
+
+data
+```
+
+# Totally awesome R package
+```{r}
+Sys.setenv(R_REMOTES_NO_ERRORS_FROM_WARNINGS="true")
+## You might get a weird warning from this package about converting a warning to error.  This will get rid of that
+remotes::install_github("jespermaag/gganatogram")
+```
+
+```{r}
+library(gganatogram)
+
+gganatogram(data = mmFemale_key,
+            organism = "mouse", sex = "female", 
+            fillOutline = "#a6bddb", fill = "colour") +
+  theme_void() +
+  coord_fixed()
+```
+

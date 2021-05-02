@@ -1,0 +1,153 @@
+---
+title: "Models"
+author: "Anthony Gutierrez"
+date: "4/28/2021"
+output: html_document
+---
+
+# Libraries 
+
+```{r}
+library(tidyverse)
+library(here)
+library(palmerpenguins)
+library(broom)
+library(performance) # if you didn't already install from group projects install it
+library(modelsummary)
+library(tidymodels)
+```
+
+# Intro to basic linear modeling 
+I am going to show you a few cool packages that help with some modeling
+
+# Anatomy of a basic linear model
+To run a simple linear model you use the following formula:
+
+mod<-lm(y~x, data = df)
+
+lm = linear model, y = dependent variable, x = independent variable(s), df = dataframe.
+
+You read this as y is a function of x
+
+Multiple regression
+mod<-lm(y~x1 + x2, data = df)
+
+Interaction term
+mod<-lm(y~x1*x2, data = df) the * will compute x1+x2+x1:x2
+
+
+# Model the penguin dataset 
+```{r}
+# Linear model of Bill depth ~ Bill length by species
+Peng_mod<-lm(bill_length_mm ~ bill_depth_mm*species, data = penguins)
+
+Peng_mod
+
+check_model(Peng_mod) # check assumptions of an lm model 
+
+anova(Peng_mod)
+
+summary(Peng_mod)# Coefficients (effect size) with error
+```
+
+# View Results with Broom 
+
+```{r}
+# Tidy coefficients
+coeffs<-tidy(Peng_mod) # just put tidy() around it
+coeffs
+
+
+
+# tidy r2, etc
+results<-glance(Peng_mod) 
+results
+
+
+
+# tidy residuals, etc
+resid_fitted<-augment(Peng_mod)
+resid_fitted
+```
+
+
+
+# Results is {modelsummary}
+{modelsummary} creates tables and plots to summarize statistical models and data in R.
+
+```{r}
+# New model
+Peng_mod_noX<-lm(bill_length_mm ~ bill_depth_mm, data = penguins)
+#Make a list of models and name them
+models<-list("Model with interaction" = Peng_mod,
+             "Model with no interaction" = Peng_mod_noX)
+#Save the results as a .docx
+modelsummary(models, output = here("week_13","outputs","table.docx"))
+```
+
+
+
+# Modelplot
+```{r}
+library(wesanderson)
+modelplot(models) +
+    labs(x = 'Coefficients', 
+         y = 'Term names') +
+    scale_color_manual(values = wes_palette('Darjeeling1'))
+```
+
+
+# Many models with purrr, dplyr, and broom
+
+```{r}
+ models<- penguins %>%
+  ungroup()%>% # the penguin data are grouped so we need to ungroup them
+  nest(-species) %>% # nest all the data by species 
+  mutate(fit = map(data, ~lm(bill_length_mm~body_mass_g, data = .)))
+
+  models
+```
+
+
+```{r}
+ results<-models %>%
+   mutate(coeffs = map(fit, tidy), # look at the coefficients
+          modelresults = map(fit, glance)) %>% # R2 and others 
+   select(species, coeffs, modelresults) %>% # only keep the results
+   unnest() # put it back in a dataframe and specify which columns to unnest
+
+view(results) # view the results
+
+```
+
+
+# Tiny Models
+
+function: 'linear_reg()'
+```{r}
+lm_mod<-linear_reg() %>%
+  set_engine("lm") %>%
+  fit(bill_length_mm ~ bill_depth_mm*species, data = penguins) %>%
+  tidy() %>%
+  ggplot()+
+    geom_point(aes(x = term, y = estimate))+
+    geom_errorbar(aes(x = term, ymin = estimate-std.error,
+                      ymax = estimate+std.error), width = 0.1 )+
+  coord_flip()
+
+
+lm_mod
+```
+
+
+
+# Totally Aewsome R package 
+{pushoverr}: Send push notifications to your phone from R! Does your code take forever to run and you want to go on a run yourself? Have it send your phone or smartwatch a push notification when it's done!
+
+You will have to follow the directions on the website to download the app to your phone... but, basically with one line of code you can do this!
+
+```{r}
+library(pushoverr)
+pushover("Anthony - your code is done.")
+```
+
