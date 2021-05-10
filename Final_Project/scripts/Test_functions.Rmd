@@ -1,0 +1,726 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+# Libraries 
+
+```{r}
+library(tidyverse)
+library(here)
+library(maps)
+library(mapdata)
+library(kableExtra)
+
+#library(mapproj)
+#library(raster)
+#library(viridis)
+#library(leaflet)
+```
+
+
+# Load Data 
+
+```{r}
+US_causes_of_death <- read_csv(here("Final_Project", "data", "Leading_Causes_of_Death_United_States.csv"))
+
+US_death <- US_causes_of_death %>%
+  select(Year, `Cause Name`, State, Deaths)
+
+view(US_death)
+
+
+
+states<-map_data("state")
+view(states)
+```
+
+
+
+# Manipulate 
+
+```{r}
+US <- US_death %>%
+  mutate(
+    region = case_when( #recode the State Names to be Capitalized
+      State == "Alabama" ~ "alabama",
+      State == "Arizona" ~ "arizona",
+      State == "Arkansas" ~ "arkansas",
+      State == "California" ~ "california",
+      State == "Colorado" ~ "colorado",
+      State == "Connecticut" ~ "connecticut",
+      State == "Delaware" ~ "delaware",
+      State == "Florida" ~ "florida",
+      State == "Georgia" ~ "georgia",
+      State == "Idaho" ~ "idaho",
+      State == "Illinois" ~ "illinois",
+      State == "Indiana" ~ "indiana",
+      State == "Iowa" ~ "iowa",
+      State == "Kansas" ~ "kansas",
+      State == "Kentucky" ~ "kentucky",
+      State == "Louisiana" ~ "louisiana",
+      State == "Maine" ~ "maine",
+      State == "Maryland" ~ "maryland",
+      State == "Massachusetts" ~ "massachusetts",
+      State == "Michigan" ~ "michigan",
+      State == "Minnesota" ~ "minnesota",
+      State == "Mississippi" ~ "mississippi",
+      State == "Missouri" ~ "missouri",
+      State == "Montana" ~ "montana",
+      State == "Nebraska" ~ "nebraska",
+      State == "Nevada" ~ "nevada",
+      State == "New Hampshire" ~ "new hampshire",
+      State == "New Jersey" ~ "new jersey",
+      State == "New Mexico" ~ "new mexico",
+      State == "New York" ~ "new york",
+      State == "North Carolina" ~ "north carolina",
+      State == "North Dakota" ~ "north dakota",
+      State == "Ohio" ~ "ohio",
+      State == "Oklahoma" ~ "oklahoma",
+      State == "Oregon" ~ "oregon",
+      State == "Pennsylvania" ~ "pennsylvania",
+      State == "Rhode Island" ~ "rhode island",
+      State == "South Carolina" ~ "south carolina",
+      State == "South Dakota" ~ "south dakota",
+      State == "Tennessee" ~ "tennessee",
+      State == "Texas" ~ "texas",
+      State == "Utah" ~ "utah",
+      State == "Vermont" ~ "vermont",
+      State == "Virginia" ~ "virginia",
+      State == "Washington" ~ "washington",
+      State == "West Virginia" ~ "west virginia",
+      State == "Wisconsin" ~ "wisconsin",
+      State == "Wyoming" ~ "wyoming",
+      State == "District of Columbia" ~ "washington"))
+
+
+# Filter for the years 1999 and 2017
+
+stat_death_1999 <- US %>%
+   filter(complete.cases(.),
+          Year == 1999,
+#maybe remove #`Cause Name` != "All causes"
+          ) %>%
+  select(Year, 'Cause Name', Deaths, region)
+
+stat_death_2017 <- US %>%
+   filter(complete.cases(.),
+          Year == 2017) %>%
+  select(Year, 'Cause Name', Deaths, region)
+
+
+view(stat_death_1999)
+view(stat_death_2017)
+```
+
+
+
+# Join the data 
+
+```{r}
+# Data from 1999
+mapdata_1999 <- (full_join(states, stat_death_1999))
+
+
+# Data from 2017
+mapdata_2017 <- (full_join(states, stat_death_2017))
+
+view(mapdata_1999)
+
+view(mapdata_2017)
+```
+
+
+# Map the data
+
+```{r}
+map1 <- mapdata_1999 %>%
+  ggplot(aes(x= long, 
+             y = lat, 
+             map_id = region)) +
+  geom_polygon(aes(fill = Deaths), 
+               color = "Black")+
+  coord_map("ortho", orientation = c(39, -98, 0))+
+  scale_fill_gradient(trans = "log10")+
+  labs(title = "Leading Causes of Death is the United States",
+       subtitle = "Fiscal Years 1999 - 2017",
+       caption = "Source: Centers for Disease Control and Prevention. Data.gov")+
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title.y = element_blank(),
+        axis.title.x = element_blank(),
+        rect = element_blank(),
+        plot.title = element_text(size  =24, face = "bold"))
+  
+
+map1
+
+
+```
+
+
+Testing New things 
+```{r}
+map2 <- mapdata_1999 %>%
+  group_by("Cause Name") %>%
+  ggplot(aes(x= long, 
+             y = lat, 
+             map_id = region)) +
+  geom_polygon(aes(x = long,
+                   y = lat,
+                   fill = Deaths, 
+               color = "Cause Name"))+
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title.y = element_blank(),
+        axis.title.x = element_blank(),
+        rect = element_blank())+
+  coord_map("ortho", orientation = c(39, -98, 0))+
+  labs(title = "Leading of Causes of Death is the United States")
+  
+
+map2
+```
+
+
+```{r}
+map3 <- mapdata_1999 %>%
+  group_by("Cause Name") %>%
+  ggplot(aes(x= long, 
+             y = lat, 
+             map_id = region)) +
+  geom_polygon(aes(x = long,
+                   y = lat,
+                   fill = "Cause Name"), 
+               color = "Black")+
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title.y = element_blank(),
+        axis.title.x = element_blank(),
+        rect = element_blank())+
+  coord_map("ortho", orientation = c(39, -98, 0))+
+  labs(title = "Leading of Causes of Death is the United States")
+  
+
+map3
+```
+
+
+
+
+
+
+```{r}
+HD_1999 <- mapdata_1999 %>%
+  filter(`Cause Name` == "Heart disease")
+
+view(HD_1999)
+
+map4 <- HD_1999 %>%
+  ggplot(aes(x= long, 
+             y = lat, 
+             map_id = region)) +
+  geom_polygon(aes(fill = Deaths), 
+               color = "Black")+
+  coord_map("ortho", orientation = c(39, -98, 0))+
+  scale_fill_gradient(trans = "log10")+
+  labs(title = "Heart disease - related deaths in the United States",
+       subtitle = "Fiscal Year 1999",
+       caption = "Source: Centers for Disease Control and Prevention. Data.gov")+
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title.y = element_blank(),
+        axis.title.x = element_blank(),
+        rect = element_blank(),
+        plot.title = element_text(size  =24, face = "bold"))
+  
+
+map4
+```
+
+
+
+```{r}
+map5 <- mapdata_1999 %>%
+  ggplot(aes(x= long, 
+             y = lat, 
+             group = `Cause Name`)) +
+  geom_map(
+    aes(map_id = region),
+    map = states,
+    color = "gray80", 
+    fill = "gray30",
+    size = 0.3
+  )+
+  coord_map("ortho", orientation = c(39, -98, 0))+
+  geom_polygon(aes(group = group,
+                   fill = Deaths), 
+               color = "Black")+
+  scale_fill_gradient(trans = "log10")+
+  labs(title = "Leading of Causes of Death is the United States")+
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title.y = element_blank(),
+        axis.title.x = element_blank(),
+        rect = element_blank(),
+        plot.title = element_text(size  =24, face = "bold"),
+        legend.position = "bottom")
+  
+
+map5
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### Might need later
+region == "alaska" ~ "Alaska",
+region == "hawaii" ~ "Hawaii"))
+
+
+states <- map_data("state") %>%
+  mutate(
+    State = case_when( #recode the State Names to be Capitalized
+      region == "alabama" ~ "Alabama",
+      region == "arizona" ~ "Arizona",
+      region == "arkansas" ~ "Arkansas",
+      region == "california" ~ "California",
+      region == "colorado" ~ "Colorado",
+      region == "connecticut" ~ "Connecticut",
+      region == "delaware" ~ "Delaware",
+      region == "florida" ~ "Florida",
+      region == "georgia" ~ "Georgia",
+      region == "idaho" ~ "Idaho",
+      region == "illinois" ~ "Illinois",
+      region == "indiana" ~ "Indiana",
+      region == "iowa" ~ "Iowa",
+      region == "kansas" ~ "Kansas",
+      region == "kentucky" ~ "Kentucky",
+      region == "louisiana" ~ "Louisiana",
+      region == "maine" ~ "Maine",
+      region == "maryland" ~ "Maryland",
+      region == "massachusetts" ~ "Massachusetts",
+      region == "michigan" ~ "Michigan",
+      region == "minnesota" ~ "Minnesota",
+      region == "mississippi" ~ "Mississippi",
+      region == "missouri" ~ "Missouri",
+      region == "montana" ~ "Montana",
+      region == "nebraska" ~ "Nebraska",
+      region == "nevada" ~ "Nevada",
+      region == "new hampshire" ~ "New Hampshire",
+      region == "new jersey" ~ "New Jersey",
+      region == "new mexico" ~ "New Mexico",
+      region == "new york" ~ "New York",
+      region == "north carolina" ~ "North Carolina",
+      region == "north dakota" ~ "North Dakota",
+      region == "ohio" ~ "Ohio",
+      region == "oklahoma" ~ "Oklahoma",
+      region == "oregon" ~ "Oregon",
+      region == "pennsylvania" ~ "Pennsylvania",
+      region == "rhode island" ~ "Rhode Island",
+      region == "south carolina" ~ "South Carolina",
+      region == "south dakota" ~ "South Dakota",
+      region == "tennessee" ~ "Tennessee",
+      region == "texas" ~ "Texas",
+      region == "utah" ~ "Utah",
+      region == "vermont" ~ "Vermont",
+      region == "virginia" ~ "Virginia",
+      region == "washington" ~ "Washington",
+      region == "west virginia" ~ "West Virginia",
+      region == "wisconsin" ~ "Wisconsin",
+      region == "wyoming" ~ "Wyoming",
+      region == "washington" ~ "District of Columbia"))
+  
+
+view(states)
+
+st_map <- states %>%
+  select(long, lat, group, order, State)
+
+view(st_map)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Create Figues for leading causes of death
+
+
+## Libraries 
+```{r}
+library(tidyverse)
+library(here)
+library(dplyr)
+```
+
+
+## Manipulate Data
+
+```{r}
+US_causes_of_death <- read_csv(here("Final_Project", "data", "Leading_Causes_of_Death_United_States.csv"))
+
+US_DEATH <- US_causes_of_death %>%
+  select(Year, `Cause Name`, State, Deaths) %>%
+  filter(State == "United States") 
+
+view(US_DEATH)
+
+```
+
+
+
+# Plot 
+
+```{r}
+Top10 <- US_DEATH %>% 
+  filter(`Cause Name`!= "All causes") %>%
+  ggplot( aes(x= Year, y= Deaths, group= `Cause Name`, color= `Cause Name`)) +
+    geom_line()+
+  labs(title = "Leading Causes of Death in the United States")+
+  theme_classic()+
+  theme(axis.text.x = element_blank(),
+        axis.title.x = element_blank())
+
+Top10
+
+```
+
+```{r}
+Eight <- US_DEATH %>% 
+  filter(`Cause Name` != "Cancer",
+         `Cause Name` != "Heart disease",
+         `Cause Name`!= "All causes")
+
+Top8 <- Eight %>%
+  ggplot( aes(x= Year, y= Deaths, group= `Cause Name`, color= `Cause Name`)) +
+    geom_line()+
+  theme_classic()+
+     theme(legend.position = "none")
+
+
+Top8
+```
+
+
+
+# Patchwork to bring the line plots together
+
+```{r}
+library(patchwork)
+
+######## NEED TO MAKE SURE THAT THE COLORS ARE MATCHING IN THE PATCHWORK #########
+
+Top10/ Top8 +
+  plot_layout(guides = 'collect')
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+### Might need later
+region == "alaska" ~ "Alaska",
+region == "hawaii" ~ "Hawaii"))
+
+
+states <- map_data("state") %>%
+  mutate(
+    State = case_when( #recode the State Names to be Capitalized
+      region == "alabama" ~ "Alabama",
+      region == "arizona" ~ "Arizona",
+      region == "arkansas" ~ "Arkansas",
+      region == "california" ~ "California",
+      region == "colorado" ~ "Colorado",
+      region == "connecticut" ~ "Connecticut",
+      region == "delaware" ~ "Delaware",
+      region == "florida" ~ "Florida",
+      region == "georgia" ~ "Georgia",
+      region == "idaho" ~ "Idaho",
+      region == "illinois" ~ "Illinois",
+      region == "indiana" ~ "Indiana",
+      region == "iowa" ~ "Iowa",
+      region == "kansas" ~ "Kansas",
+      region == "kentucky" ~ "Kentucky",
+      region == "louisiana" ~ "Louisiana",
+      region == "maine" ~ "Maine",
+      region == "maryland" ~ "Maryland",
+      region == "massachusetts" ~ "Massachusetts",
+      region == "michigan" ~ "Michigan",
+      region == "minnesota" ~ "Minnesota",
+      region == "mississippi" ~ "Mississippi",
+      region == "missouri" ~ "Missouri",
+      region == "montana" ~ "Montana",
+      region == "nebraska" ~ "Nebraska",
+      region == "nevada" ~ "Nevada",
+      region == "new hampshire" ~ "New Hampshire",
+      region == "new jersey" ~ "New Jersey",
+      region == "new mexico" ~ "New Mexico",
+      region == "new york" ~ "New York",
+      region == "north carolina" ~ "North Carolina",
+      region == "north dakota" ~ "North Dakota",
+      region == "ohio" ~ "Ohio",
+      region == "oklahoma" ~ "Oklahoma",
+      region == "oregon" ~ "Oregon",
+      region == "pennsylvania" ~ "Pennsylvania",
+      region == "rhode island" ~ "Rhode Island",
+      region == "south carolina" ~ "South Carolina",
+      region == "south dakota" ~ "South Dakota",
+      region == "tennessee" ~ "Tennessee",
+      region == "texas" ~ "Texas",
+      region == "utah" ~ "Utah",
+      region == "vermont" ~ "Vermont",
+      region == "virginia" ~ "Virginia",
+      region == "washington" ~ "Washington",
+      region == "west virginia" ~ "West Virginia",
+      region == "wisconsin" ~ "Wisconsin",
+      region == "wyoming" ~ "Wyoming",
+      region == "washington" ~ "District of Columbia"))
+  
+
+view(states)
+
+st_map <- states %>%
+  select(long, lat, group, order, State)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Create a Pie Plot of the Top Three preventable Causes of death
+
+```{r}
+# Figure out what what to divide by to calculate the percentages 
+all_causes <- US_causes_of_death %>%
+  select(Year, `Cause Name`, State, Deaths) %>%
+  filter(State == "United States",
+         `Cause Name` == "All causes",
+         Year %in% c(1999, 2017))
+
+view(all_causes)
+
+
+# Create table for the top preventable causes of death
+PI_death <- US_causes_of_death %>%
+  select(Year, `Cause Name`, State, Deaths) %>%
+  filter(State == "United States",
+         `Cause Name` %in% c("CLRD", "Heart disease", "Diabetes", "All causes"))  # Start by filtering out the Heart Disease, Diabetes, Chronic lower respiratory disease
+  
+
+view(PI_death)
+```
+
+
+```{r}
+# Filter for earliest time period 
+Pie_1999 <- PI_death %>% 
+  filter(`Year` == 1999)
+
+
+per_1999 <- Pie_1999 %>%
+  mutate(
+    Percent_Death = case_when(
+      `Cause Name` == "CLRD" ~ 100*124181/2391399,
+      `Cause Name` == "Diabetes" ~ 100*68399/2391399,
+      `Cause Name` == "Heart disease" ~ 100*725192/2391399
+      `Cause Name` == "all causes" ~ 100*725192/2391399
+    )
+  )
+
+view(per_1999)
+
+
+
+# Filter for most recent time period 
+Pie_2017 <- PI_death %>% 
+  filter(`Year` == 2017)
+
+view(Pie_2017)
+
+
+per_2017 <- Pie_2017 %>%
+  mutate(
+    Percent_Death = case_when(
+      `Cause Name` == "CLRD" ~ 100*160201/2813503,
+      `Cause Name` == "Diabetes" ~ 100*83564/2813503,
+      `Cause Name` == "Heart disease" ~ 100*647457/2813503
+      `Cause Name` == ""
+    )
+  )
+
+view(per_2017)
+```
+
+
+
+## Plot Pie charts
+
+```{r}
+per_1999 %>%
+  pie(Percent_Death)
+```
+

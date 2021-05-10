@@ -1,0 +1,51 @@
+---
+title: "Loading shape files and mapping data"
+author: "Anthony Gutierrez"
+date: "5/8/2021"
+output: html_document
+---
+
+# Libraries 
+
+```{r}
+library(tidyverse)
+library(here)
+library(maps)
+library(mapdata)
+```
+
+
+```{r}
+HD_2017 <- mapdata_2017 %>%
+  filter(`Cause Name` == "Heart disease")
+
+view(HD_2017)
+
+HD_map17 <- HD_2017 %>%
+  ggplot(aes(x= long, 
+             y = lat, 
+             map_id = region)) +
+  geom_polygon(aes(fill = Deaths), 
+               color = "Black")+
+  coord_map("ortho", orientation = c(39, -98, 0))+
+  scale_fill_gradient(trans = "log10")+
+  labs(title = "Heart disease - related deaths in the United States",
+       subtitle = "Fiscal Year 2017",
+       caption = "Source: Centers for Disease Control and Prevention. Data.gov")+
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title.y = element_blank(),
+        axis.title.x = element_blank(),
+        rect = element_blank(),
+        plot.title = element_text(size  =24, face = "bold"))
+  
+
+HD_map17
+```
+
+#  Bring plots together with Patchwork
+```{r}
+# HD_1999 + HD_2017 
+```
+

@@ -1,0 +1,302 @@
+---
+title: "Causes of Death in the US"
+author: "Anthony Gutierrez"
+date: "5/4/2021"
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+---
+
+# Libraries 
+
+```{r}
+library(tidyverse)
+library(here)
+library(maps)
+library(mapdata)
+library(patchwork)
+
+#library(mapproj)
+#library(raster)
+#library(viridis)
+#library(leaflet)
+```
+
+# Load in Data
+
+```{r}
+
+# This is the primary source of data:
+US_causes_of_death <- read_csv(here("Final_Project", "data", "Leading_Causes_of_Death_United_States.csv"))
+
+view(US_causes_of_death)
+
+
+US_death <- US_causes_of_death %>%
+  select(Year, `Cause Name`, State, Deaths)
+
+view(US_death)
+
+
+
+# Load in mapping data
+states<-map_data("state")
+view(states)
+
+
+
+# This is another source of death data in case the first doesn't work out
+US_weekly_death <- read_csv(here("Final_Project", "data", "Weekly_Counts_of_Deaths.csv"))
+
+
+# The following datasets may explain why we are seeing a significant amount of certain deaths:
+# I will npt be using them in the presentation
+
+Obesity_health <- read_csv(here("Final_Project", "data", "Nutrition_Physical_Activity_and_Obesity.csv"))
+
+
+Tobacco_consumption <- read_csv(here("Final_Project", "data", "Adult_Tobacco_Consumption.csv"))
+
+view(Tobacco_consumption)
+
+```
+
+# Introduction
+
+The goal of this project is to create a map of the US, on the map will be listed the number 1 cause of death per state.  
+
+I also want to do a seperate chart showing the rise of certain disease over the past few years, or in the case of COVID19... on a weekly basis. 
+
+
+```{r}
+US_DEATH <- US_causes_of_death %>%
+  select(Year, `Cause Name`, State, Deaths) %>%
+  filter(State == "United States") 
+
+view(US_DEATH)
+
+```
+
+
+
+# Plot 
+
+```{r}
+# Create line plot
+Top10 <- US_DEATH %>% 
+  filter(`Cause Name`!= "All causes") %>% # remove all causes so that it does not scew the data
+  ggplot( aes(x= Year, y= Deaths, group= `Cause Name`, color= `Cause Name`)) +
+    geom_line()+ #create line plot for each of the top 10 reasons for death in the US
+  labs(title = "Leading Causes of Death in the United States")+
+  theme_classic()+
+  theme(axis.text.x = element_blank(), #remove x- axis text and title because I will patch with another figure later
+        axis.title.x = element_blank())
+
+Top10
+
+```
+
+```{r}
+
+Eight <- US_DEATH %>% 
+  filter(`Cause Name` != "Cancer",
+         `Cause Name` != "Heart disease",
+         `Cause Name`!= "All causes") #Filter out all causes and the top two causes of death to see the remaining line plots with greater clarity
+
+#create second line plot
+Top8 <- Eight %>%
+  ggplot( aes(x= Year, y= Deaths, group= `Cause Name`, color= `Cause Name`)) +
+    geom_line()+
+  theme_classic()+
+     theme(legend.position = "none")
+
+
+Top8
+```
+
+
+
+# Patchwork to bring the line plots together
+
+```{r}
+Top10/ Top8 +
+  plot_layout(guides = 'collect')
+```
+
+
+
+# Manipulate 
+
+```{r}
+# To join the US_death data to the state mapping data, I need to first recode the state names under the state column of the death dataset to match the state names under region column of the state dataset.
+
+US <- US_death %>%
+  mutate(
+    region = case_when( #recode the State Names to be Capitalized
+      State == "Alabama" ~ "alabama",
+      State == "Arizona" ~ "arizona",
+      State == "Arkansas" ~ "arkansas",
+      State == "California" ~ "california",
+      State == "Colorado" ~ "colorado",
+      State == "Connecticut" ~ "connecticut",
+      State == "Delaware" ~ "delaware",
+      State == "Florida" ~ "florida",
+      State == "Georgia" ~ "georgia",
+      State == "Idaho" ~ "idaho",
+      State == "Illinois" ~ "illinois",
+      State == "Indiana" ~ "indiana",
+      State == "Iowa" ~ "iowa",
+      State == "Kansas" ~ "kansas",
+      State == "Kentucky" ~ "kentucky",
+      State == "Louisiana" ~ "louisiana",
+      State == "Maine" ~ "maine",
+      State == "Maryland" ~ "maryland",
+      State == "Massachusetts" ~ "massachusetts",
+      State == "Michigan" ~ "michigan",
+      State == "Minnesota" ~ "minnesota",
+      State == "Mississippi" ~ "mississippi",
+      State == "Missouri" ~ "missouri",
+      State == "Montana" ~ "montana",
+      State == "Nebraska" ~ "nebraska",
+      State == "Nevada" ~ "nevada",
+      State == "New Hampshire" ~ "new hampshire",
+      State == "New Jersey" ~ "new jersey",
+      State == "New Mexico" ~ "new mexico",
+      State == "New York" ~ "new york",
+      State == "North Carolina" ~ "north carolina",
+      State == "North Dakota" ~ "north dakota",
+      State == "Ohio" ~ "ohio",
+      State == "Oklahoma" ~ "oklahoma",
+      State == "Oregon" ~ "oregon",
+      State == "Pennsylvania" ~ "pennsylvania",
+      State == "Rhode Island" ~ "rhode island",
+      State == "South Carolina" ~ "south carolina",
+      State == "South Dakota" ~ "south dakota",
+      State == "Tennessee" ~ "tennessee",
+      State == "Texas" ~ "texas",
+      State == "Utah" ~ "utah",
+      State == "Vermont" ~ "vermont",
+      State == "Virginia" ~ "virginia",
+      State == "Washington" ~ "washington",
+      State == "West Virginia" ~ "west virginia",
+      State == "Wisconsin" ~ "wisconsin",
+      State == "Wyoming" ~ "wyoming",
+      State == "District of Columbia" ~ "washington"))
+
+
+# Filter for the years 1999 and 2017
+
+stat_death_1999 <- US %>%
+   filter(complete.cases(.), # removes all rows that have NAs
+          Year == 1999, #only look at 1999 data
+#maybe remove #`Cause Name` != "All causes"
+          ) %>%
+  select(Year, 'Cause Name', Deaths, region) #select for these columns
+
+stat_death_2017 <- US %>%
+   filter(complete.cases(.), # removes all rows that have NAs
+          Year == 2017) %>% #only look at 2017 data
+  select(Year, 'Cause Name', Deaths, region) #select for these columns
+
+
+view(stat_death_1999)
+view(stat_death_2017)
+```
+
+
+
+# Join the data 
+
+```{r}
+# Data from 1999
+mapdata_1999 <- (full_join(states, stat_death_1999)) #Join the cleaned up US_death data to the state mapping data [1999]
+
+
+# Data from 2017
+mapdata_2017 <- (full_join(states, stat_death_2017)) #Join the cleaned up US_death data to the state mapping data [2017]
+
+view(mapdata_1999)
+
+view(mapdata_2017)
+```
+
+
+# Map the data
+
+## Mapping 1999 and 2017 Heart Disease Deaths
+```{r}
+
+#Fix data for 1999
+HD_1999 <- mapdata_1999 %>%
+  filter(`Cause Name` == "Heart disease") #filter for heart disease
+
+view(HD_1999)
+
+HD_map99 <- HD_1999 %>%
+  ggplot(aes(x= long, 
+             y = lat, 
+             map_id = region)) + # plot states
+  geom_polygon(aes(fill = Deaths), #color depth depends on number of deaths
+               color = "Black")+
+  coord_map("ortho", orientation = c(39, -98, 0))+ #project in ortho
+  scale_fill_gradient(trans = "log10")+ #color gradient
+  labs(title = "Heart disease - related deaths in the United States",
+       subtitle = "Fiscal Year 1999",
+       caption = "Source: Centers for Disease Control and Prevention. Data.gov")+
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title.y = element_blank(),
+        axis.title.x = element_blank(),
+        rect = element_blank(), #remove axis's and background as they are unnecessary 
+        plot.title = element_text(size  =24, face = "bold"))
+  
+
+HD_map99
+```
+
+
+
+```{r}
+
+#Fix for 2017
+HD_2017 <- mapdata_2017 %>%
+  filter(`Cause Name` == "Heart disease") #filter for heart disease
+
+view(HD_2017)
+
+HD_map17 <- HD_2017 %>%
+  ggplot(aes(x= long, 
+             y = lat, 
+             map_id = region)) + # plot states
+  geom_polygon(aes(fill = Deaths), #color depth depends on number of deaths
+               color = "Black")+
+  coord_map("ortho", orientation = c(39, -98, 0))+ #project in ortho
+  scale_fill_gradient(trans = "log10")+ #color gradient
+  labs(title = "Heart disease - related deaths in the United States",
+       subtitle = "Fiscal Year 2017",
+       caption = "Source: Centers for Disease Control and Prevention. Data.gov")+
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title.y = element_blank(),
+        axis.title.x = element_blank(),
+        rect = element_blank(), #remove axis's and background as they are unnecessary 
+        plot.title = element_text(size  =24, face = "bold"))
+  
+
+HD_map17
+```
+
+#  Bring plots together with Patchwork
+```{r}
+# HD_1999 + HD_2017 
+```
+
+
+
+
+
+
+
